@@ -110,7 +110,7 @@ if (!SpeechRecognition) {
     const recognition = new SpeechRecognition();
 
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.lang = "en-US";
 
     let listening = false;
@@ -122,20 +122,71 @@ if (!SpeechRecognition) {
         status.textContent = "Listening...";
     };
 
-    recognition.onresult = function(event) {
-        for (let i = event.resultIndex;
-             i < event.results.length; i++) {
+    
+let lastCommand = "";
+let lastResultIndex = -1;
 
-            if (!event.results[i].isFinal) continue;
+recognition.onresult = function(event) {
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const spoken = result[0].transcript.trim().toUpperCase();
 
-            const spoken = event.results[i][0].transcript
-                .trim()
-                .toUpperCase();
+        // Avoid repeating a command from the same speech result.
+        // Allow a new result to repeat the same coordinate later.
+        if (i !== lastResultIndex) {
+            lastCommand = "";
+            lastResultIndex = i;
+        }
 
-            if (/\bDONE\b/.test(spoken)) {
+        const normalized = spoken
+            .replace(/\bTWENTY[\s-]?THREE\b/g, "23")
+            .replace(/\bTWENTY[\s-]?TWO\b/g, "22")
+            .replace(/\bTWENTY[\s-]?ONE\b/g, "21")
+            .replace(/\bTWENTY\b/g, "20")
+            .replace(/\bNINETEEN\b/g, "19")
+            .replace(/\bEIGHTEEN\b/g, "18")
+            .replace(/\bSEVENTEEN\b/g, "17")
+            .replace(/\bSIXTEEN\b/g, "16")
+            .replace(/\bFIFTEEN\b/g, "15")
+            .replace(/\bFOURTEEN\b/g, "14")
+            .replace(/\bTHIRTEEN\b/g, "13")
+            .replace(/\bTWELVE\b/g, "12")
+            .replace(/\bELEVEN\b/g, "11")
+            .replace(/\bTEN\b/g, "10")
+            .replace(/\bNINE\b/g, "9")
+            .replace(/\bEIGHT\b/g, "8")
+            .replace(/\bSEVEN\b/g, "7")
+            .replace(/\bSIX\b/g, "6")
+            .replace(/\bFIVE\b/g, "5")
+            .replace(/\bFOUR\b/g, "4")
+            .replace(/\bTHREE\b/g, "3")
+            .replace(/\bTWO\b/g, "2")
+            .replace(/\bONE\b/g, "1");
+
+        // Process DONE immediately when recognized.
+        if (/\bDONE\b/.test(normalized)) {
+            if (lastCommand !== "DONE") {
                 markDone();
-                continue;
+                lastCommand = "DONE";
             }
+            continue;
+        }
+
+        // Recognize coordinates A1 through J23.
+        const match = normalized.match(
+            /\b([A-J])[\s,.-]*(2[0-3]|1[0-9]|[1-9])\b/
+        );
+
+        if (match) {
+            const coordinate = match[1] + match[2];
+
+            if (lastCommand !== coordinate) {
+                selectCircle(coordinate);
+                lastCommand = coordinate;
+            }
+        }
+    }
+};
 
             const normalized = spoken
                 .replace(/\bONE\b/g, "1")
