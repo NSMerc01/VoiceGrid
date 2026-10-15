@@ -1,14 +1,13 @@
 
 const grid = document.getElementById("grid");
 const status = document.getElementById("status");
+const startButton = document.getElementById("startButton");
 
 const rows = "ABCDEFGHIJ";
 const columns = 23;
-
-// Store all 230 circles
 const circles = {};
 
-// Create column labels 1 through 23
+// Create column headings
 const corner = document.createElement("div");
 grid.appendChild(corner);
 
@@ -19,40 +18,29 @@ for (let col = 1; col <= columns; col++) {
     grid.appendChild(label);
 }
 
-// Create 10 rows, A through J
+// Create rows and circles
 for (const row of rows) {
-
-    // Create the row label
     const rowLabel = document.createElement("div");
     rowLabel.className = "row-label";
     rowLabel.textContent = row;
     grid.appendChild(rowLabel);
 
-    // Create 23 circles in each row
     for (let col = 1; col <= columns; col++) {
-
         const circle = document.createElement("div");
         circle.className = "circle";
 
-        // Example: B9
         const coordinate = row + col;
         circle.id = coordinate;
-
-        // Store the circle for later use
         circles[coordinate] = circle;
 
         grid.appendChild(circle);
     }
 }
 
-// Keep track of the selected circle
 let selectedCircle = null;
 
-// Select a circle by coordinate
 function selectCircle(coordinate) {
-
     coordinate = coordinate.toUpperCase();
-
     const circle = circles[coordinate];
 
     if (!circle) {
@@ -63,16 +51,12 @@ function selectCircle(coordinate) {
 
     circle.classList.remove("completed");
     circle.classList.add("selected");
-
     selectedCircle = circle;
 
-    status.textContent =
-        coordinate + " selected";
+    status.textContent = coordinate + " selected";
 }
 
-// Mark the selected circle as completed
 function markDone() {
-
     if (!selectedCircle) {
         status.textContent = "No circle selected";
         return;
@@ -87,17 +71,14 @@ function markDone() {
     selectedCircle = null;
 }
 
-// Temporary keyboard testing
+// Keyboard testing
 document.addEventListener("keydown", function(event) {
-
-    // Press Enter to complete the selected circle
     if (event.key === "Enter") {
         markDone();
     }
 });
 
-const startButton = document.getElementById("startButton");
-
+// Speech recognition
 const SpeechRecognition =
     window.SpeechRecognition ||
     window.webkitSpeechRecognition;
@@ -122,65 +103,19 @@ if (!SpeechRecognition) {
         status.textContent = "Listening...";
     };
 
-    
+    recognition.onresult = function(event) {
+        for (let i = event.resultIndex;
+             i < event.results.length; i++) {
 
+            if (!event.results[i].isFinal) continue;
 
-recognition.onresult = function(event) {
-    for (let i = event.resultIndex;
-         i < event.results.length; i++) {
+            const spoken = event.results[i][0]
+                .transcript.trim().toUpperCase();
 
-        if (!event.results[i].isFinal) continue;
-
-        const spoken = event.results[i][0].transcript
-            .trim()
-            .toUpperCase();
-
-        if (/\bDONE\b/.test(spoken)) {
-            markDone();
-            continue;
-        }
-
-        const normalized = spoken
-            .replace(/\bONE\b/g, "1")
-            .replace(/\bTWO\b/g, "2")
-            .replace(/\bTHREE\b/g, "3")
-            .replace(/\bFOUR\b/g, "4")
-            .replace(/\bFIVE\b/g, "5")
-            .replace(/\bSIX\b/g, "6")
-            .replace(/\bSEVEN\b/g, "7")
-            .replace(/\bEIGHT\b/g, "8")
-            .replace(/\bNINE\b/g, "9")
-            .replace(/\bTEN\b/g, "10");
-
-        const match = normalized.match(
-            /\b([A-J])[\s,.-]*(2[0-3]|1[0-9]|[1-9])\b/
-        );
-
-        if (match) {
-            selectCircle(match[1] + match[2]);
-        } else {
-            status.textContent =
-                "Not recognized: " + spoken;
-        }
-    }
-};
-
-    
-        // Recognize coordinates A1 through J23.
-        const match = normalized.match(
-            /\b([A-J])[\s,.-]*(2[0-3]|1[0-9]|[1-9])\b/
-        );
-
-        if (match) {
-            const coordinate = match[1] + match[2];
-
-            if (lastCommand !== coordinate) {
-                selectCircle(coordinate);
-                lastCommand = coordinate;
+            if (/\bDONE\b/.test(spoken)) {
+                markDone();
+                continue;
             }
-        }
-    }
-};
 
             const normalized = spoken
                 .replace(/\bONE\b/g, "1")
@@ -195,7 +130,7 @@ recognition.onresult = function(event) {
                 .replace(/\bTEN\b/g, "10");
 
             const match = normalized.match(
-                /\b([A-J])[\s,.-]*(2[0-3]|1[0-9]|[1-9])\b/
+                /\b([A-J])[\s,.-]*(2[0-3]|1[0-9]|[1-9]|[1-9])\b/
             );
 
             if (match) {
@@ -244,5 +179,3 @@ recognition.onresult = function(event) {
         }
     });
 }
-
-
